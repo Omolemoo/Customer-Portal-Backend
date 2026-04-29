@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1776551663487",
+    "name": "Jane",
+    "email": "jane@example.com",
+    "password": "$2b$12$HSZE2O1v8ccQ114py6wTjeJ0moSl1gA8W7Yczw1m3cwryiW.3bpLS"
+  },
+  {
+    "id": "1776553302483",
+    "name": "Joseph",
+    "email": "test3@example.com",
+    "password": "$2b$12$xreoMS5Z.ITcaiLqwBF.d.zLOgpKGoQJNONK8lpJO7KYP9P.Efy.i"
+  },
+  {
+    "id": "1776553407475",
+    "name": "Kat",
+    "email": "Kat@gmail.com",
+    "password": "$2b$12$ubvDmif.eTqcMUXryHilFejo5LAsDUGqPBxMn/uAI7RjZwiOMmXsq"
+  },
+  {
+    "id": "1776872237553",
+    "name": "John Cena",
+    "email": "john@gmail.com",
+    "password": "$2b$12$m3JZUTP85SbBT0N3bQXil.g47EJntraN6kr4a4mO9uQ5YLIgQNfum"
+  },
+  {
+    "id": "1776872420548",
+    "name": "Jay",
+    "email": "Jay",
+    "password": "$2b$12$W78RbtPUqNYnt6q7UUSY9u9iFwJmCh7oCqatdfNIC45pF6xK9Y03a"
+  }
+]
