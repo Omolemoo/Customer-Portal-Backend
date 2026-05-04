@@ -13,7 +13,7 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 // MIDDLEWARE - FIXED CORS
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3004', 'http://127.0.0.1:3004'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001' , 'http://localhost:3004', 'http://127.0.0.1:3004'],
   credentials: true
 }));
 app.use(express.json({ limit: '10kb' }));
