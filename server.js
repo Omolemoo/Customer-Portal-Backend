@@ -10,88 +10,102 @@ const path = require('path');
 const app = express();
 const USERS_FILE = path.join(__dirname, 'users.json');
 
-// Middleware
+// MIDDLEWARE - FIXED CORS
 app.use(helmet());
-app.use(cors({ origin: 'http://localhost:3000' }));
-app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3004', 'http://127.0.0.1:3004'],
+  credentials: true
+}));
+app.use(express.json({ limit: '10kb' }));
 
-// Load users from file
+// Load/Save users
 async function loadUsers() {
-  try {
-    const data = await fs.readFile(USERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(await fs.readFile(USERS_FILE, 'utf8')); } 
+  catch { return []; }
 }
+async function saveUsers(users) { await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2)); }
 
-// Save users to file
-async function saveUsers(users) {
-  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
-}
-
-// Routes
-app.get('/api/health', (req, res) => res.json({ success: true }));
-
+// REGISTER with VALIDATION
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
     
-    // Load existing users
-    const users = await loadUsers();
+    // EMAIL: Gmail only
+    if (!email.endsWith('@gmail.com')) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email must be Gmail (ends with @gmail.com)' 
+      });
+    }
     
-    // Check if exists
+    // PASSWORD: 8+ chars, 1 uppercase, 1 special
+    const passRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])[a-zA-Z\d!@#$%^&*]{8,}$/;
+    if (!passRegex.test(password)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password: 8+ chars, 1 uppercase (A-Z), 1 special (!@#$%^&*)' 
+      });
+    }
+    
+    const users = await loadUsers();
     if (users.find(u => u.email === email)) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
     
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
-    
-    // Create user
     const user = { id: Date.now().toString(), name, email, password: hashedPassword };
     users.push(user);
-    
-    // Save to file
     await saveUsers(users);
     
-    // JWT token
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    
-    res.json({
-      success: true,
-      token,
-      user: { id: user.id, name, email }
-    });
+    res.json({ success: true, token, user: { id: user.id, name, email } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
+// LOGIN with PASSWORD validation
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const users = await loadUsers();
     
+    // EMAIL: Gmail only
+    if (!email.endsWith('@gmail.com')) {
+      return res.status(400).json({ 
+        message: 'Gmail address required (@gmail.com)' 
+      });
+    }
+    
+    const users = await loadUsers();
     const user = users.find(u => u.email === email);
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
     
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    
-    res.json({
-      success: true,
-      token,
-      user: { id: user.id, name: user.name, email }
-    });
+    res.json({ success: true, token, user: { id: user.id, name: user.name, email } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`Server running: http://localhost:${PORT}`);
+// PAYMENT
+app.post('/api/payment', (req, res) => {
+  const { amount, iban, cardNumber, cvv, expiry } = req.body;
   
+  if (!/^\d+(\.\d{2})?$/.test(amount)) return res.status(400).json({error: 'Invalid amount'});
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/.test(iban)) return res.status(400).json({error: 'Invalid IBAN'});
+  if (!/^\d{13,19}$/.test(cardNumber.replace(/\s/g, ''))) return res.status(400).json({error: 'Invalid card'});
+  if (!/^\d{3,4}$/.test(cvv)) return res.status(400).json({error: 'Invalid CVV'});
+  if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) return res.status(400).json({error: 'Invalid expiry'});
+  
+  const paymentId = 'PAY' + Date.now();
+  res.json({ success: true, paymentId, message: `✅ R${amount} processed` });
 });
+
+app.listen(5000, () => console.log('🚀 http://localhost:5000'));
+// Add port 3001 to CORS
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3001'],
+  credentials: true
+}));
